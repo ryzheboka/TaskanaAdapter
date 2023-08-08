@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
 import pro.taskana.adapter.exceptions.TaskCreationFailedException;
 import pro.taskana.adapter.manager.AdapterManager;
 import pro.taskana.adapter.systemconnector.api.ReferencedTask;
@@ -16,7 +17,9 @@ import pro.taskana.adapter.taskanaconnector.api.TaskanaConnector;
 import pro.taskana.task.api.exceptions.TaskAlreadyExistException;
 import pro.taskana.task.api.models.Task;
 
-/** Retrieves tasks in an external system and starts corresponding tasks in TASKANA. */
+/**
+ * Retrieves tasks in an external system and starts corresponding tasks in TASKANA.
+ */
 @Component
 public class TaskanaTaskStarter {
 
@@ -25,7 +28,8 @@ public class TaskanaTaskStarter {
   @Value("${taskana.adapter.run-as.user}")
   protected String runAsUser;
 
-  @Autowired AdapterManager adapterManager;
+  @Autowired
+  AdapterManager adapterManager;
 
   @Scheduled(
       fixedRateString =
@@ -94,7 +98,8 @@ public class TaskanaTaskStarter {
   private List<ReferencedTask> createAndStartTaskanaTasks(
       SystemConnector systemConnector, List<ReferencedTask> tasksToStart) {
     List<ReferencedTask> newCreatedTasksInTaskana = new ArrayList<>();
-    for (ReferencedTask referencedTask : tasksToStart) {
+    tasksToStart.parallelStream().forEach(referencedTask -> {
+    //for (ReferencedTask referencedTask : tasksToStart) {
       try {
         createTaskanaTask(referencedTask, adapterManager.getTaskanaConnector(), systemConnector);
         newCreatedTasksInTaskana.add(referencedTask);
@@ -116,7 +121,7 @@ public class TaskanaTaskStarter {
             e);
         systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);
       }
-    }
+    });
     return newCreatedTasksInTaskana;
   }
 

@@ -82,7 +82,7 @@ public abstract class AbsIntegrationTest {
     if (!isInitialised) {
       String schema =
           ((HikariDataSource) taskanaDataSource).getSchema() == null
-              ? "TASKANA"
+              ? "taskana"
               : ((HikariDataSource) taskanaDataSource).getSchema();
       // setup Taskana engine and clear Taskana database
       TaskanaConfiguration taskanaConfiguration =
@@ -124,7 +124,7 @@ public abstract class AbsIntegrationTest {
     // and classifications anyway we use for this purpose an engine with security disabled ...
     String schema =
         ((HikariDataSource) taskanaDataSource).getSchema() == null
-            ? "TASKANA"
+            ? "taskana"
             : ((HikariDataSource) taskanaDataSource).getSchema();
     TaskanaConfiguration taskanaConfiguration =
         new TaskanaConfiguration.Builder(this.taskanaDataSource, false, schema)
