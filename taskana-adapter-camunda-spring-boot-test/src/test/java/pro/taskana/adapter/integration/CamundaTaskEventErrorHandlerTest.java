@@ -82,7 +82,6 @@ public class CamundaTaskEventErrorHandlerTest extends AbsIntegrationTest {
     // Start process with task to have an entry in OutboxDB
     this.camundaProcessengineRequester.startCamundaProcessAndReturnId(
         "simple_user_task_process", "");
-    System.out.println("Systemconnectors: " + this.adapterManager.getSystemConnectors().toString());
     this.adapterManager
         .getSystemConnectors()
         .forEach(

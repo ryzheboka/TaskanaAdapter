@@ -30,37 +30,6 @@
       <artifactId>spring-boot-starter-jdbc</artifactId>
     </dependency>
 
-    <!-- Camunda REST Api -->
-    <dependency>
-      <groupId>org.camunda.bpm.springboot</groupId>
-      <artifactId>camunda-bpm-spring-boot-starter-rest</artifactId>
-      <version>${version.camunda}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.skyscreamer</groupId>
-          <artifactId>jsonassert</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <!-- Camunda webapps-->
-    <dependency>
-      <groupId>org.camunda.bpm.springboot</groupId>
-      <artifactId>camunda-bpm-spring-boot-starter-webapp</artifactId>
-      <version>${version.camunda}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.camunda.bpm</groupId>
-      <artifactId>camunda-engine-plugin-spin</artifactId>
-      <version>${version.camunda}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.camunda.spin</groupId>
-      <artifactId>camunda-spin-dataformat-json-jackson</artifactId>
-      <version>${version.camunda.spin}</version>
-    </dependency>
-
     <!-- outbox-rest-spring-boot-starter-->
     <dependency>
       <groupId>pro.taskana</groupId>

@@ -2,6 +2,7 @@ package pro.taskana.adapter.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,8 @@ public class TaskanaTaskStarter {
   @Value("${taskana.adapter.run-as.user}")
   protected String runAsUser;
 
+  @Value("${taskana.adapter.number-of-threads}")
+  protected Integer numberOfThreads;
   @Autowired
   AdapterManager adapterManager;
 
@@ -98,30 +101,42 @@ public class TaskanaTaskStarter {
   private List<ReferencedTask> createAndStartTaskanaTasks(
       SystemConnector systemConnector, List<ReferencedTask> tasksToStart) {
     List<ReferencedTask> newCreatedTasksInTaskana = new ArrayList<>();
-    tasksToStart.parallelStream().forEach(referencedTask -> {
-    //for (ReferencedTask referencedTask : tasksToStart) {
-      try {
-        createTaskanaTask(referencedTask, adapterManager.getTaskanaConnector(), systemConnector);
-        newCreatedTasksInTaskana.add(referencedTask);
-      } catch (TaskCreationFailedException e) {
-        if (e.getCause() instanceof TaskAlreadyExistException) {
-          newCreatedTasksInTaskana.add(referencedTask);
-        } else {
-          LOGGER.warn(
-              "caught Exception when attempting to start TaskanaTask for referencedTask {}",
-              referencedTask,
-              e);
-          systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);
-        }
-      } catch (Exception e) {
-        LOGGER.warn(
-            "caught unexpected Exception when attempting to start TaskanaTask "
-                + "for referencedTask {}",
-            referencedTask,
-            e);
-        systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);
-      }
-    });
+    ForkJoinPool threadPool = new ForkJoinPool(numberOfThreads);
+    try {
+      threadPool.submit(() -> tasksToStart.parallelStream().forEach(referencedTask -> {
+        //tasksToStart.parallelStream().forEach(referencedTask -> {
+        //for (ReferencedTask referencedTask : tasksToStart) {
+        UserContext.runAsUser(
+            runAsUser, () -> {
+              try {
+                createTaskanaTask(referencedTask, adapterManager.getTaskanaConnector(),
+                    systemConnector);
+                newCreatedTasksInTaskana.add(referencedTask);
+              } catch (TaskCreationFailedException e) {
+                if (e.getCause() instanceof TaskAlreadyExistException) {
+                  newCreatedTasksInTaskana.add(referencedTask);
+                } else {
+                  LOGGER.warn(
+                      "caught Exception when attempting to start TaskanaTask for referencedTask {}",
+                      referencedTask,
+                      e);
+                  systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask,
+                      e);
+                }
+              } catch (Exception e) {
+                LOGGER.warn(
+                    "caught unexpected Exception when attempting to start TaskanaTask "
+                        + "for referencedTask {}",
+                    referencedTask,
+                    e);
+                systemConnector.taskanaTaskFailedToBeCreatedForNewReferencedTask(referencedTask, e);
+              }
+              return null;
+            });
+      }));
+    } finally {
+      threadPool.shutdown();
+    }
     return newCreatedTasksInTaskana;
   }
 
