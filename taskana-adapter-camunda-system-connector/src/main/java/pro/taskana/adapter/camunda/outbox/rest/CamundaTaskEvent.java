@@ -15,6 +15,8 @@ public class CamundaTaskEvent implements Serializable {
   private String camundaTaskId;
   private String systemEngineIdentifier;
 
+  private String lockExpires;
+
   public int getId() {
     return id;
   }
@@ -87,6 +89,14 @@ public class CamundaTaskEvent implements Serializable {
     this.systemEngineIdentifier = systemEngineIdentifier;
   }
 
+  public String getLockExpires() {
+    return lockExpires;
+  }
+
+  public void setLockExpires(String lockExpires) {
+    this.lockExpires = lockExpires;
+  }
+
   @Override
   public String toString() {
     return "CamundaTaskEvent [id="
@@ -107,6 +117,8 @@ public class CamundaTaskEvent implements Serializable {
         + camundaTaskId
         + ", systemEngineIdentifier="
         + systemEngineIdentifier
+        + ", lockExpires="
+        + lockExpires
         + "]";
   }
 }

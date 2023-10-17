@@ -2,9 +2,12 @@ package pro.taskana.adapter.camunda;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import pro.taskana.adapter.camunda.exceptions.SystemException;
 
 public class CamundaListenerConfiguration {
@@ -29,6 +32,9 @@ public class CamundaListenerConfiguration {
   private static final String OUTBOX_SCHEMA_DEFAULT = "taskana_tables";
   private static final String EXCEPTION_FOR_FAULTY_PROCESS_VARIABLES =
       "taskana.listener.process.variables.exception";
+  private static final String LOCK_EXPIRATION_PERIOD = "taskana.adapter.outbox.lockExpirationPeriod";
+  private static final Duration DEFAULT_LOCK_EXPIRATION_PERIOD = Duration.ofMinutes(30);
+
   private static final boolean CREATE_OUTBOX_SCHEMA_DEFAULT = true;
   private static final int INITIAL_NUMBER_OF_TASK_CREATION_RETRIES_DEFAULT = 5;
   private static final Logger LOGGER = LoggerFactory.getLogger(CamundaListenerConfiguration.class);
@@ -144,6 +150,27 @@ public class CamundaListenerConfiguration {
     return initialNumberOfTaskCreationRetries;
   }
 
+  public static Duration getLockExpirationPeriod() {
+    Duration lockExpirationPeriod;
+    try {
+      lockExpirationPeriod =
+          Duration.parse(getInstance()
+              .outboxProperties
+              .getProperty(LOCK_EXPIRATION_PERIOD));
+    } catch (DateTimeParseException e) {
+      lockExpirationPeriod = DEFAULT_LOCK_EXPIRATION_PERIOD;
+      LOGGER.warn(
+          String.format(
+              "Attempted to retrieve lockExpirationPeriod and caught "
+                  + "Exception. Setting default for lockExpirationPerion to %d ",
+              lockExpirationPeriod
+          ),
+          e);
+    }
+
+    return lockExpirationPeriod == null ? lockExpirationPeriod : DEFAULT_LOCK_EXPIRATION_PERIOD;
+  }
+
   private void readPropertiesFromClasspath() {
 
     try (InputStream propertiesStream =
@@ -172,6 +199,7 @@ public class CamundaListenerConfiguration {
   }
 
   private static class LazyHolder {
+
     private static final CamundaListenerConfiguration INSTANCE = new CamundaListenerConfiguration();
   }
 }

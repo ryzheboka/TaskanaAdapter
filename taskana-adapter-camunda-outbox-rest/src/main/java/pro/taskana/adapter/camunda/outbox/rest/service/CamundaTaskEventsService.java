@@ -45,6 +45,8 @@ public class CamundaTaskEventsService {
   private static final List<String> ALLOWED_PARAMS = Stream.of(TYPE, RETRIES).collect(toList());
 
   private static final String OUTBOX_SCHEMA = OutboxRestConfiguration.getOutboxSchema();
+  //TODO: sqls um lock überprüfung und ein for update anpassen
+  //Todo: sql zum Lock setzen hinzufügen
   private static final String SQL_GET_CREATE_EVENTS =
       "select * from %s.event_store where type = ? "
           + "and remaining_retries>0 and blocked_until < ? fetch first %d rows only";
