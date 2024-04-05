@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import pro.taskana.adapter.impl.ReferencedTaskClaimCanceler;
-import pro.taskana.adapter.impl.ReferencedTaskClaimer;
 import pro.taskana.adapter.impl.ReferencedTaskCompleter;
 import pro.taskana.adapter.impl.TaskanaTaskStarter;
 import pro.taskana.adapter.impl.TaskanaTaskTerminator;
@@ -18,6 +18,7 @@ import pro.taskana.adapter.manager.AdapterManager;
 @EnableScheduling
 @Import({SchedulerConfiguration.class})
 @Configuration
+@EnableTransactionManagement
 public class AdapterConfiguration {
 
   @Value("${.jndi-name:no-jndi-configured}")
@@ -35,11 +36,11 @@ public class AdapterConfiguration {
     return new ReferencedTaskCompleter();
   }
 
-  @Bean
+  /*@Bean
   @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
   public ReferencedTaskClaimer referencedTaskClaimer() {
-    return new ReferencedTaskClaimer();
-  }
+
+  }*/
 
   @Bean
   @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)

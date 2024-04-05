@@ -60,7 +60,6 @@ public class TaskanaTaskStarter {
         "TaskanaTaskStarter.retrieveReferencedTasksAndCreateCorrespondingTaskanaTasks ENTRY ");
     for (SystemConnector systemConnector : (adapterManager.getSystemConnectors().values())) {
       try {
-
         List<ReferencedTask> tasksToStart = systemConnector.retrieveNewStartedReferencedTasks();
 
         List<ReferencedTask> newCreatedTasksInTaskana =

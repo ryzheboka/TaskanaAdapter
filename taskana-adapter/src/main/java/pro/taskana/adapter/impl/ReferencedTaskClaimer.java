@@ -1,5 +1,7 @@
 package pro.taskana.adapter.impl;
 
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -8,6 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import pro.taskana.adapter.manager.AdapterManager;
 import pro.taskana.adapter.systemconnector.api.ReferencedTask;
 import pro.taskana.adapter.systemconnector.api.SystemConnector;
@@ -15,16 +22,32 @@ import pro.taskana.adapter.taskanaconnector.api.TaskanaConnector;
 import pro.taskana.common.api.exceptions.SystemException;
 import pro.taskana.task.api.CallbackState;
 
-/** Claims ReferencedTasks in external system that have been claimed in TASKANA. */
+/**
+ * Claims ReferencedTasks in external system that have been claimed in TASKANA.
+ */
 @Component
 public class ReferencedTaskClaimer {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ReferencedTaskClaimer.class);
 
-  @Value("${taskana.adapter.run-as.user}")
+  //@Value("${taskana.adapter.run-as.user}")
   protected String runAsUser;
 
-  @Autowired AdapterManager adapterManager;
+  AdapterManager adapterManager;
+
+  private PlatformTransactionManager transactionManager;
+
+  private TransactionTemplate transactionTemplate;
+
+  @Autowired
+  public ReferencedTaskClaimer(@Value("${taskana.adapter.run-as.user}") String runAsUser,
+      AdapterManager adapterManager, PlatformTransactionManager transactionManager) {
+    this.runAsUser = runAsUser;
+    this.adapterManager = adapterManager;
+    transactionTemplate = new TransactionTemplate(transactionManager);
+    transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
+    transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+  }
 
   @Scheduled(
       fixedRateString =
@@ -43,7 +66,8 @@ public class ReferencedTaskClaimer {
         UserContext.runAsUser(
             runAsUser,
             () -> {
-              retrieveClaimedTaskanaTasksAndClaimCorrespondingReferencedTask();
+              transactionTemplate.executeWithoutResult(status ->
+                  retrieveClaimedTaskanaTasksAndClaimCorrespondingReferencedTask());
               return null;
             });
       } catch (Exception ex) {
@@ -52,21 +76,25 @@ public class ReferencedTaskClaimer {
     }
   }
 
-  private void retrieveClaimedTaskanaTasksAndClaimCorrespondingReferencedTask() {
-
+  @Transactional(rollbackFor = Exception.class, propagation = REQUIRES_NEW,
+      isolation = Isolation.REPEATABLE_READ)
+  public void retrieveClaimedTaskanaTasksAndClaimCorrespondingReferencedTask() {
+    System.out.println("Start retrieving claimed tasks");
     LOGGER.trace(
         "ReferencedTaskClaimer."
             + "retrieveClaimedTaskanaTasksAndClaimCorrespondingReferencedTask ENTRY");
     try {
       TaskanaConnector taskanaSystemConnector = adapterManager.getTaskanaConnector();
-
       List<ReferencedTask> tasksClaimedByTaskana =
           taskanaSystemConnector.retrieveClaimedTaskanaTasksAsReferencedTasks();
+      System.out.println("Retrieved " + tasksClaimedByTaskana.get(0).getId());
       List<ReferencedTask> tasksClaimedInExternalSystem =
           claimReferencedTasksInExternalSystem(tasksClaimedByTaskana);
 
       taskanaSystemConnector.changeTaskCallbackState(
           tasksClaimedInExternalSystem, CallbackState.CLAIMED);
+      System.out.println("Changed callback state " + tasksClaimedByTaskana.get(0).getId());
+
     } finally {
       LOGGER.trace(
           "ReferencedTaskClaimer."

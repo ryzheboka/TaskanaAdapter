@@ -1,5 +1,7 @@
 package pro.taskana.adapter.impl;
 
+import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -8,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import pro.taskana.adapter.manager.AdapterManager;
 import pro.taskana.adapter.systemconnector.api.ReferencedTask;
 import pro.taskana.adapter.systemconnector.api.SystemConnector;
@@ -54,6 +58,8 @@ public class ReferencedTaskClaimCanceler {
     }
   }
 
+  @Transactional(rollbackFor = Exception.class, propagation = REQUIRES_NEW,
+      isolation = Isolation.REPEATABLE_READ)
   public void retrieveCancelledClaimTaskanaTasksAndCancelClaimCorrespondingReferencedTask() {
 
     try {
@@ -61,11 +67,13 @@ public class ReferencedTaskClaimCanceler {
 
       List<ReferencedTask> tasksCancelClaimedByTaskana =
           taskanaSystemConnector.retrieveCancelledClaimTaskanaTasksAsReferencedTasks();
+      System.out.println("Retrieved " + tasksCancelClaimedByTaskana.get(0).getId());
       List<ReferencedTask> tasksCancelClaimedInExternalSystem =
           cancelClaimReferencedTasksInExternalSystem(tasksCancelClaimedByTaskana);
 
       taskanaSystemConnector.changeTaskCallbackState(
           tasksCancelClaimedInExternalSystem, CallbackState.CALLBACK_PROCESSING_REQUIRED);
+      // Entperren
     } finally {
       LOGGER.trace(
           "ReferencedTaskClaimer."

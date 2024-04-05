@@ -164,6 +164,22 @@ public class CamundaProcessengineRequester {
   }
 
   /**
+   * Retrieves the camunda task with the given id. Returns {@code true} if successful.
+   *
+   * @param camundaTaskId the id of the task to be retrieved.
+   * @return {@code true} if retrieval was successful, {@code false} if not.
+   * @throws JSONException in case of JSON problems
+   */
+  public JSONObject getTaskAsJsonFromTaskId(String camundaTaskId) throws JSONException {
+    String url = BASIC_ENGINE_PATH + this.processEngineKey + TASK_PATH + "/" + camundaTaskId;
+    HttpEntity<Void> requestEntity = httpHeaderProvider.prepareNewEntityForCamundaRestApi();
+    ResponseEntity<String> response =
+        restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+    JSONObject taskRetrievalAnswerJson = new JSONObject(response.getBody());
+    return taskRetrievalAnswerJson;
+  }
+
+  /**
    * Retrieves the camunda task with the given id from camundas task history. Returns {@code true}
    * if successful.
    *
